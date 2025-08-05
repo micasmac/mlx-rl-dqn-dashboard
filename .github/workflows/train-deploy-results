@@ -1,0 +1,81 @@
+name: Train DQN Agent and Deploy Results
+
+on:
+  workflow_dispatch:
+    inputs:
+      timesteps:
+        description: 'Number of training timesteps'
+        required: false
+        default: '100000'
+        type: string
+      environment:
+        description: 'Gym environment'
+        required: false
+        default: 'CartPole-v1'
+        type: string
+      learning_rate:
+        description: 'Learning rate'
+        required: false
+        default: '2.5e-4'
+        type: string
+      batch_size:
+        description: 'Batch size'
+        required: false
+        default: '128'
+        type: string
+  push:
+    branches: [ main ]
+    paths: [ 'src/**', 'pyproject.toml' ]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 6 AM UTC
+
+jobs:
+  train-and-deploy:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+        
+      - name: Create virtual environment
+        run: uv venv --python 3.12
+        
+      - name: Install dependencies
+        run: |
+          source .venv/bin/activate
+          uv pip install mlx numpy tqdm matplotlib gymnasium stable-baselines3 plotly jinja2 imageio opencv-python pillow
+          
+      - name: Run DQN training
+        run: |
+          source .venv/bin/activate
+          python src/train_dqn.py \
+            --timesteps ${{ github.event.inputs.timesteps || '100000' }} \
+            --env ${{ github.event.inputs.environment || 'CartPole-v1' }} \
+            --output docs/results/ \
+            --learning-rate ${{ github.event.inputs.learning_rate || '2.5e-4' }} \
+            --batch-size ${{ github.event.inputs.batch_size || '128' }} \
+            --buffer-size 10000 \
+            --seed 42
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
