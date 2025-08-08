@@ -201,7 +201,8 @@ class DQNTrainingWrapper:
             q_network = QNetwork(
                 num_layers=2,
                 input_dim=int(np.array(env.observation_space.shape).prod()),
-                hidden_dim=64,
+                #hidden_dim=64,
+                hidden_dim=getattr(h, 'hidden_dim', 128),
                 output_dim=env.action_space.n,
                 activations=[nn.relu, nn.relu],
             )
@@ -212,7 +213,8 @@ class DQNTrainingWrapper:
             target_network = QNetwork(
                 num_layers=2,
                 input_dim=int(np.array(env.observation_space.shape).prod()),
-                hidden_dim=64,
+                #hidden_dim=64,
+                hidden_dim=getattr(h, 'hidden_dim', 128),
                 output_dim=env.action_space.n,
                 activations=[nn.relu, nn.relu],
             )
