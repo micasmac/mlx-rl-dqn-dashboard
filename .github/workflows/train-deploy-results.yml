@@ -6,7 +6,7 @@ on:
       timesteps:
         description: 'Number of training timesteps'
         required: false
-        default: '100000'
+        default: '2000'
         type: string
       environment:
         description: 'Gym environment'
@@ -21,7 +21,7 @@ on:
       batch_size:
         description: 'Batch size'
         required: false
-        default: '128'
+        default: '64'
         type: string
   push:
     branches: [ main ]
@@ -60,11 +60,11 @@ jobs:
         run: |
           source .venv/bin/activate
           python src/train_dqn.py \
-            --timesteps ${{ github.event.inputs.timesteps || '100000' }} \
+            --timesteps ${{ github.event.inputs.timesteps || '2000' }} \
             --env ${{ github.event.inputs.environment || 'CartPole-v1' }} \
             --output docs/results/ \
             --learning-rate ${{ github.event.inputs.learning_rate || '2.5e-4' }} \
-            --batch-size ${{ github.event.inputs.batch_size || '128' }} \
+            --batch-size ${{ github.event.inputs.batch_size || '64' }} \
             --buffer-size 10000 \
             --seed 42
           
