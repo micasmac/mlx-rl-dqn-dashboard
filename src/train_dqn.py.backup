@@ -335,15 +335,102 @@ class DQNTrainingWrapper:
                 print(f"Average reward: {np.mean(self.training_history['episode_rewards']):.2f}")
                 print(f"Average episode length: {np.mean(self.training_history['episode_lengths']):.1f}")            
             
+            for global_step in tqdm(range(self.args.total_timesteps), desc="Training DQN"):
+                # Epsilon-greedy action selection
+                epsilon = linear_schedule(
+                    self.args.start_e,
+                    self.args.end_e,
+                    self.args.exploration_fraction * self.args.total_timesteps,
+                    global_step,
+                )
+                
+                if random.random() < epsilon:
+                    action = env.action_space.sample()
+                else:
+                    q_values = agent.q_network(mx.array(obs.reshape(1, -1)))
+                    action = int(mx.argmax(q_values).item())
+                
+                # Take environment step
+                next_obs, reward, terminated, truncated, info = env.step(action)
+                done = terminated or truncated
+                
+                # Track episode progress
+                current_episode_reward += reward
+                current_episode_length += 1
+                
+                # Convert the action to a NumPy array before adding to the buffer
+                # Stable-baseline3's replay buffer expects NumPy arrays not int
+                action_np = np.array(action, dtype=np.int64)  # Use np.int64 for compatibility
+
+                # Store transition in replay buffer
+                replay_buffer.add(obs, next_obs, action_np, reward, done, info)  # <-- Pass the NumPy array here
+                
+                # Handle episode completion
+                if done:
+                    # Record completed episode
+                    self.training_history['episode_rewards'].append(float(current_episode_reward))
+                    self.training_history['episode_lengths'].append(int(current_episode_length))
+                    episodes_completed += 1
+                    
+                    # Update progress bar
+                    # progress_bar.set_postfix({
+                      #  'reward': f"{current_episode_reward:.1f}",
+                      #  'epsilon': f"{epsilon:.3f}",
+                      #  'episodes': episodes_completed
+                    })
+                    
+                    # Reset for next episode
+                    current_episode_reward = 0
+                    current_episode_length = 0
+                    obs, _ = env.reset()
+                else:
+                    obs = next_obs
+                
+                # Training
+                # Use replay_buffer.size() instead of len(replay_buffer)
+                if global_step > self.args.learning_starts and replay_buffer.size() >= self.args.batch_size:
+                    if global_step % self.args.train_frequency == 0:
+                        data = replay_buffer.sample(self.args.batch_size)
+                        loss = agent.update(data, self.args)
+                        if loss is not None:
+                            self.training_history['losses'].append(float(loss))
+                        
+                        # Calculate and record SPS (Steps Per Second)
+                        if global_step % 100 == 0:
+                            sps = int(global_step / (time.time() - start_time))
+                            self.training_history['sps_values'].append(sps)
+                    
+                    # Update target network
+                    if global_step % self.args.target_network_frequency == 0:
+                        copy_weights(agent.q_network, agent.target_network, tau=self.args.tau)
+                
+                # Record epsilon periodically
+                if global_step % 500 == 0:  # More frequent for shorter runs
+                    self.training_history['epsilon_values'].append(epsilon)
+            
+            # Handle case where last episode didn't complete
+            if current_episode_length > 0:
+                self.training_history['episode_rewards'].append(float(current_episode_reward))
+                self.training_history['episode_lengths'].append(int(current_episode_length))
+                episodes_completed += 1
+            
+            env.close()
+            
+            print(f"\nTraining completed!")
+            print(f"Total episodes: {episodes_completed}")
+            if self.training_history['episode_rewards']:
+                print(f"Average reward: {np.mean(self.training_history['episode_rewards']):.2f}")
+                print(f"Average episode length: {np.mean(self.training_history['episode_lengths']):.1f}")
+            
         except Exception as e:
             print(f"Error during training: {e}")
             import traceback
             traceback.print_exc()
-            # Only use dummy data if we have no real data
+            # Only use dummy data if we have absolutely no real data
             if not self.training_history['episode_rewards']:
-                print("Generating dummy training data for demonstration purposes")
+                print("Generating dummy training data for demonstration...")
                 self.generate_dummy_data()
-
+        
         # Save results
         results = self.prepare_results()
         self.save_results(results, output_dir)
