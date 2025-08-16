@@ -525,6 +525,11 @@ class DQNTrainingWrapper:
         plt.close()
         print(f"Plot saved to {plot_file}")
 
+    def generate_dashboard_html(results):
+        # HTML generation code
+        with open('docs/index.html', 'w') as f:
+            f.write(html_content)
+
 def main():
     parser = argparse.ArgumentParser(description='Train DQN Agent using RLX Implementation')
     parser.add_argument('--env', type=str, default='CartPole-v1',
