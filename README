@@ -21,22 +21,13 @@ An **automated machine learning training and visualization system** that trains 
 
 <div align="center">
 
-```mermaid
-graph LR
-    A[🎮 Training] --> B[📊 Analysis] --> C[🌐 Dashboard] --> D[📈 Insights]
-    
-    A --> A1[MLX Optimized]
-    A --> A2[Auto-tuning]
-    
-    B --> B1[Real-time Metrics]
-    B --> B2[Performance Tracking]
-    
-    C --> C1[Interactive Charts]
-    C --> C2[GitHub Pages]
-    
-    D --> D1[Algorithm Insights]
-    D --> D2[Hyperparameter Impact]
-```
+## 🌟 What is MLX RL DQN Dashboard?
+
+An **automated machine learning training and visualization system** that trains Deep Q-Network (DQN) agents using **Apple's MLX framework** and automatically deploys interactive dashboards to showcase results. Perfect for researchers, students, and ML practitioners working with Apple Silicon.
+
+**Workflow**: 🎮 Training → 📊 Analysis → 🌐 Dashboard → 📈 Insights
+
+**Features**: MLX Optimization • Auto-tuning • Real-time Metrics • Interactive Charts • GitHub Pages Deployment
 
 </div>
 
