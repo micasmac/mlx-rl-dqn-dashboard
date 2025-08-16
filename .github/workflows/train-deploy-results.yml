@@ -72,28 +72,43 @@ jobs:
           
       - name: Setup Pages
         uses: actions/configure-pages@v5
-
-      - name: Generate dashboard HTML
-        run: |
-          cd src
-          python -c "
-          from train_dqn import DQNTrainingWrapper
-          import json
-    
-          # Load the results
-        with open('../docs/results/latest_run.json', 'r') as f:
-          results = json.load(f)
-
-          # Create trainer instance and generate HTML
-          trainer = DQNTrainingWrapper()
-          trainer.generate_dashboard_html(results, '../docs')
-          "        
-
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './docs'
-          
+      - name: Generate dashboard HTML
+        run: |
+          python3 << 'EOF'
+          import json
+          import os
+          from datetime import datetime
+    
+          # Load results
+          with open('docs/results/latest_run.json', 'r') as f:
+              results = json.load(f)
+    
+    # Simple dashboard HTML (avoiding quote issues)
+          html_content = '''<!DOCTYPE html>
+          <html>
+          <head>
+              <title>MLX DQN Dashboard</title>
+              <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+          </head>
+          <body>
+              <h1>Training Results</h1>
+              <p>Episodes: ''' + str(results['episodes']) + '''</p>
+              <p>Average Reward: ''' + str(results['avg_reward']) + '''</p>
+          </body>
+          </html>'''
+    
+    # Write dashboard HTML
+          with open('docs/index.html', 'w') as f:
+              f.write(html_content)
+    
+      print('Dashboard generated successfully!')
+      EOF    
+      
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
