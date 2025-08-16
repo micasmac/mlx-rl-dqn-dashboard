@@ -60,7 +60,7 @@ jobs:
         run: |
           source .venv/bin/activate
           python src/train_dqn.py \
-            --timesteps ${{ github.event.inputs.timesteps || '100000' }} \ # was 2000
+            --timesteps ${{ github.event.inputs.timesteps || '100000' }} \
             --env ${{ github.event.inputs.environment || 'CartPole-v1' }} \
             --output docs/results/ \
             --learning-rate ${{ github.event.inputs.learning_rate || '2.5e-4' }} \
@@ -70,7 +70,23 @@ jobs:
           
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        
+
+      - name: Generate dashboard HTML
+        run: |
+          cd src
+          python -c "
+          from train_dqn import DQNTrainingWrapper
+          import json
+    
+          # Load the results
+          with open('../docs/results/latest_run.json', 'r') as f:
+          results = json.load(f)
+
+          # Create trainer instance and generate HTML
+          trainer = DQNTrainingWrapper()
+          trainer.generate_dashboard_html(results, '../docs')
+          "        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
