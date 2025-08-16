@@ -80,7 +80,7 @@ jobs:
     
           # Load the results
           with open('../docs/results/latest_run.json', 'r') as f:
-          results = json.load(f)
+            results = json.load(f)
 
           # Create trainer instance and generate HTML
           trainer = DQNTrainingWrapper()
